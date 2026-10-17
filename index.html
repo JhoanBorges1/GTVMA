@@ -329,7 +329,7 @@
         .group-card strong, .contact-item strong { font-family: 'Google Sans', sans-serif; font-weight: 700; color: var(--text-main); }
         .group-card small, .contact-item small { color: var(--text-sub); font-size: 0.85rem; font-weight: 500; }
 
-        /* === TABLA DE AGENDA ESTILO EXCEL (TEXTO NEGRO Y NEGRITA) === */
+        /* === TABLA DE AGENDA ESTILO EXCEL === */
         #areaExportar {
             padding: 24px;
             background-color: var(--google-card-bg);
@@ -364,6 +364,7 @@
             color: var(--text-main); 
             text-align: center; 
             outline: none; 
+            white-space: nowrap;
         }
 
         .agenda-table td[contenteditable="true"]:focus {
@@ -371,7 +372,6 @@
             border-radius: 4px;
         }
 
-        /* Días, Fechas y Horas en Negro Puro y Negrita */
         .agenda-table td.bold-cell { 
             font-weight: 700; 
             font-family: 'Google Sans', sans-serif; 
@@ -384,7 +384,6 @@
             color: var(--text-main);
         }
         
-        /* División horizontal solo al cambiar de día */
         .agenda-table tr.day-separator td { border-top: 2px solid var(--google-blue); }
 
         /* === CHIP BUTTONS === */
@@ -514,7 +513,7 @@
         .historial-item { background-color: var(--google-card-bg); border: 1px solid var(--border-light); padding: 14px 18px; border-radius: var(--radius-md); margin-bottom: 10px; font-size: 0.9rem; }
         .historial-item strong { font-family: 'Google Sans', sans-serif; font-weight: 700; color: var(--google-blue); }
 
-        /* === ESTILOS EXCLUSIVOS DE IMPRESIÓN === */
+        /* === OCULTAR ELEMENTOS NO DESEADOS AL IMPRIMIR === */
         @media print {
             body { background: white !important; color: black !important; zoom: 1 !important; }
             header, .tab-bar, .btn-vertical-group, .contact-actions, .modal, #auth-overlay, .search-box, .no-print, .module-title, #secContactarModulo { display: none !important; }
@@ -525,6 +524,7 @@
             .agenda-table th { background-color: #f1f3f4 !important; color: black !important; border-bottom: 2px solid #000 !important; }
             .agenda-table td { border-bottom: 1px solid #ddd !important; }
             .agenda-table tr.day-separator td { border-top: 2px solid #000 !important; }
+            th.no-print, td.no-print { display: none !important; }
         }
 
         @media (max-width: 600px) {
@@ -572,7 +572,7 @@
     <header>
         <h1>Gestión de Territorios Vista Al Mar</h1>
         <div class="header-actions">
-            <!-- ZOOM CONTROL -->
+            <!-- ZOOM CONTROL (AHORA HASTA 50%) -->
             <div class="zoom-control">
                 <span>Zoom:</span>
                 <button class="zoom-btn" onclick="cambiarZoom(-0.1)">-</button>
@@ -732,8 +732,8 @@
                 <div id="listaContactos"></div>
             </section>
         </div>
-        
-<!-- === TAB HISTORIAL DE ACTIVIDAD === -->
+
+        <!-- === TAB HISTORIAL DE ACTIVIDAD === -->
         <div id="tab-historial" class="tab-content">
             <section class="module-section">
                 <div class="module-title">Historial de Cambios</div>
@@ -938,10 +938,10 @@
         }
     });
 
-    // === TEMA Y ZOOM ===
+    // === TEMA Y ZOOM (LÍMITE MÍNIMO DESDE 50%) ===
     let currentZoom = parseFloat(localStorage.getItem('vdm_zoom') || '1');
     function cambiarZoom(delta) {
-        currentZoom = Math.min(Math.max(0.8, currentZoom + delta), 1.4);
+        currentZoom = Math.min(Math.max(0.5, currentZoom + delta), 1.4);
         document.documentElement.style.setProperty('--app-zoom', currentZoom);
         document.getElementById('zoomLabel').innerText = `${Math.round(currentZoom * 100)}%`;
         localStorage.setItem('vdm_zoom', currentZoom);
@@ -1228,7 +1228,7 @@
         const diasEnMes = new Date(anio, mes, 0).getDate();
         for (let dia = diasEnMes; dia >= 1; dia--) {
             const fecha = new Date(anio, mes - 1, dia);
-            if (fecha.getDay() === 6) return dia; // 6 es Sábado
+            if (fecha.getDay() === 6) return dia;
         }
         return -1;
     }
@@ -1242,7 +1242,6 @@
         const ultimoSabadoDia = obtenerUltimoSabado(anio, mes);
         let nuevaAgenda = [];
 
-        // Ordenar territorios por número de menor a mayor
         const territoriosOrdenados = [...territorios].sort((a,b) => (parseInt(a.numero)||999) - (parseInt(b.numero)||999));
 
         for (let i = 1; i <= diasEnMes; i++) {
@@ -1250,7 +1249,6 @@
             const diaNombre = diasSemana[fechaObj.getDay()];
             const fechaIso = fechaObj.toISOString().split('T')[0];
 
-            // SI ES EL ÚLTIMO SÁBADO DEL MES: Regla especial de los 6 grupos con sus ancianos
             if (i === ultimoSabadoDia) {
                 const numGrupos = Math.min(grupos.length, 6);
                 for (let gIdx = 0; gIdx < (numGrupos || 6); gIdx++) {
@@ -1271,7 +1269,6 @@
                 continue;
             }
 
-            // DÍAS REGULARES DEL MES
             const horariosDelDia = MATRIZ_HORARIOS[diaNombre] || [];
             let territoriosUsadosHoy = [];
 
@@ -1471,7 +1468,11 @@
     async function compartirAgenda() {
         const area = document.getElementById('areaExportar');
         try {
-            const canvas = await html2canvas(area, { scale: 2, backgroundColor: '#ffffff' });
+            const canvas = await html2canvas(area, { 
+                scale: 2, 
+                backgroundColor: '#ffffff',
+                ignoreElements: (el) => el.classList.contains('no-print')
+            });
             canvas.toBlob(async (blob) => {
                 const file = new File([blob], `Agenda_${document.getElementById('mesAgenda').value}.png`, { type: 'image/png' });
                 if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -1584,6 +1585,7 @@
         if (event.target.files[0]) fileReader.readAsText(event.target.files[0]);
     }
 
+    // === DESCARGAR IMAGEN SIN BOTONES DE EDICIÓN Y CON ESPACIADO LIMPIO ===
     async function descargarImagen() {
         const area = document.getElementById('areaExportar'); 
         const rango = document.getElementById('rangoExportar').value;
@@ -1603,7 +1605,12 @@
         });
 
         try {
-            const canvas = await html2canvas(area, { scale: 2, backgroundColor: '#ffffff', logging: false });
+            const canvas = await html2canvas(area, { 
+                scale: 2, 
+                backgroundColor: '#ffffff', 
+                logging: false,
+                ignoreElements: (el) => el.classList.contains('no-print')
+            });
             const link = document.createElement('a');
             link.download = `Agenda-${document.getElementById('mesAgenda').value}-${rango}.png`;
             link.href = canvas.toDataURL('image/png');
