@@ -332,7 +332,7 @@
         /* === TABLA DE AGENDA ESTILO EXCEL === */
         #areaExportar {
             padding: 24px;
-            background-color: var(--google-card-bg);
+            background-color: #ffffff;
             border-radius: var(--radius-lg);
             width: 100%;
             margin: 0 auto;
@@ -344,27 +344,38 @@
         .export-header p { margin: 0; color: var(--text-sub); font-size: 0.95rem; font-weight: 500; }
 
         .table-responsive { width: 100%; overflow-x: auto; border-radius: var(--radius-md); border: 1px solid var(--border-light); }
-        .agenda-table { width: 100%; border-collapse: collapse; font-size: var(--export-font-size); font-family: 'Roboto', sans-serif; }
+        
+        .agenda-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            font-size: var(--export-font-size); 
+            font-family: 'Roboto', sans-serif; 
+            table-layout: auto;
+        }
+
         .agenda-table th { 
-            background-color: var(--google-gray-bg); 
-            padding: 12px 10px; 
+            background-color: #f8f9fa; 
+            padding: 12px 14px; 
             text-align: center; 
-            color: var(--text-main); 
+            color: #000000; 
             font-family: 'Google Sans', sans-serif; 
             font-weight: 700; 
             font-size: 0.85rem; 
             text-transform: uppercase; 
             letter-spacing: 0.5px;
-            border-bottom: 2px solid var(--border-light); 
+            border-bottom: 2px solid #dadce0; 
+            white-space: nowrap;
         }
 
         .agenda-table td { 
-            padding: 8px 10px; 
+            padding: 10px 14px; 
             border-bottom: none; 
-            color: var(--text-main); 
+            color: #000000; 
             text-align: center; 
             outline: none; 
             white-space: nowrap;
+            word-spacing: normal;
+            letter-spacing: normal;
         }
 
         .agenda-table td[contenteditable="true"]:focus {
@@ -375,13 +386,13 @@
         .agenda-table td.bold-cell { 
             font-weight: 700; 
             font-family: 'Google Sans', sans-serif; 
-            color: var(--text-main); 
+            color: #000000; 
         }
 
         .agenda-table td.cell-hora {
             font-weight: 700;
             font-family: 'Google Sans', sans-serif;
-            color: var(--text-main);
+            color: #000000;
         }
         
         .agenda-table tr.day-separator td { border-top: 2px solid var(--google-blue); }
@@ -513,7 +524,6 @@
         .historial-item { background-color: var(--google-card-bg); border: 1px solid var(--border-light); padding: 14px 18px; border-radius: var(--radius-md); margin-bottom: 10px; font-size: 0.9rem; }
         .historial-item strong { font-family: 'Google Sans', sans-serif; font-weight: 700; color: var(--google-blue); }
 
-        /* === OCULTAR ELEMENTOS NO DESEADOS AL IMPRIMIR === */
         @media print {
             body { background: white !important; color: black !important; zoom: 1 !important; }
             header, .tab-bar, .btn-vertical-group, .contact-actions, .modal, #auth-overlay, .search-box, .no-print, .module-title, #secContactarModulo { display: none !important; }
@@ -572,14 +582,13 @@
     <header>
         <h1>Gestión de Territorios Vista Al Mar</h1>
         <div class="header-actions">
-            <!-- ZOOM CONTROL (AHORA HASTA 50%) -->
+            <!-- ZOOM CONTROL (LÍMITE MÍNIMO 50%) -->
             <div class="zoom-control">
                 <span>Zoom:</span>
                 <button class="zoom-btn" onclick="cambiarZoom(-0.1)">-</button>
                 <span id="zoomLabel">100%</span>
                 <button class="zoom-btn" onclick="cambiarZoom(0.1)">+</button>
             </div>
-            <!-- MODO OSCURO -->
             <button class="btn-outline" onclick="toggleTheme()" style="padding: 6px 12px; font-size: 0.8rem;" id="themeToggleBtn">🌙 Oscuro</button>
             <button class="btn-outline" onclick="cerrarSesion()" style="padding: 6px 12px; font-size: 0.8rem;">Cerrar Sesión</button>
         </div>
@@ -732,7 +741,6 @@
                 <div id="listaContactos"></div>
             </section>
         </div>
-
         <!-- === TAB HISTORIAL DE ACTIVIDAD === -->
         <div id="tab-historial" class="tab-content">
             <section class="module-section">
@@ -938,7 +946,7 @@
         }
     });
 
-    // === TEMA Y ZOOM (LÍMITE MÍNIMO DESDE 50%) ===
+    // === TEMA Y ZOOM (LÍMITE MÍNIMO HASTA 50%) ===
     let currentZoom = parseFloat(localStorage.getItem('vdm_zoom') || '1');
     function cambiarZoom(delta) {
         currentZoom = Math.min(Math.max(0.5, currentZoom + delta), 1.4);
@@ -1328,7 +1336,7 @@
         return menosAsignados[Math.floor(Math.random() * menosAsignados.length)];
     }
 
-    // === RENDERIZADO Y EDICIÓN (BOTÓN + A LA IZQUIERDA POR FILA) ===
+    // === RENDERIZADO Y EDICIÓN ===
     function renderAgenda(datos, nombreMes) {
         document.getElementById('fechaActualDisplay').innerText = `${nombreMes} 2026`;
         const cuerpo = document.getElementById('tablaCuerpoAgenda');
@@ -1396,7 +1404,7 @@
         }
     }
 
-    // === WHATSAPP + CONDUCTORES DISPONIBLES DE EMERGENCIA ===
+    // === CONTACTAR ===
     function renderContactos() {
         const cont = document.getElementById('listaContactos'); if (!cont) return;
         cont.innerHTML = '';
@@ -1464,15 +1472,88 @@
         }
     }
 
-    // === COMPARTIR CON API NATIVA NAVEGADOR ===
+    // === GENERADOR DE RENDERIZADO PERFECTO EN IMAGEN (NATIVE CLONE RENDER) ===
+    async function generarCanvasLimpio(areaOriginal, rango) {
+        const clonArea = areaOriginal.cloneNode(true);
+        
+        // Remover elementos de edicion no deseados (.no-print)
+        clonArea.querySelectorAll('.no-print').forEach(el => el.remove());
+        
+        // Convertir campos editables a texto fijo estatico
+        clonArea.querySelectorAll('[contenteditable="true"]').forEach(cell => {
+            cell.removeAttribute('contenteditable');
+            cell.innerText = cell.innerText.trim();
+        });
+
+        // Filtrar filas por rango de semana seleccionado
+        const filas = Array.from(clonArea.querySelectorAll('#tablaCuerpoAgenda tr'));
+        filas.forEach(f => {
+            const dia = parseInt(f.getAttribute('data-diames'));
+            if (isNaN(dia)) return;
+            let mostrar = true;
+            if (rango === 'sem1' && (dia < 1 || dia > 7)) mostrar = false;
+            else if (rango === 'sem2' && (dia < 8 || dia > 14)) mostrar = false;
+            else if (rango === 'sem3' && (dia < 15 || dia > 21)) mostrar = false;
+            else if (rango === 'sem4' && dia < 22) mostrar = false;
+            if (!mostrar) f.remove();
+        });
+
+        // Contenedor temporal aislado fuera de la vista
+        const tempContainer = document.createElement('div');
+        tempContainer.style.position = 'absolute';
+        tempContainer.style.top = '-9999px';
+        tempContainer.style.left = '-9999px';
+        tempContainer.style.width = '1000px'; 
+        tempContainer.style.backgroundColor = '#ffffff';
+        tempContainer.style.padding = '20px';
+        tempContainer.appendChild(clonArea);
+        document.body.appendChild(tempContainer);
+
+        // Estilos forzados de tabla para asegurar espaciados perfectos entre columnas
+        const tablaClonada = clonArea.querySelector('.agenda-table');
+        if (tablaClonada) {
+            tablaClonada.style.width = '100%';
+            tablaClonada.style.tableLayout = 'auto';
+            tablaClonada.style.borderCollapse = 'collapse';
+            tablaClonada.querySelectorAll('th, td').forEach(cell => {
+                cell.style.padding = '10px 14px';
+                cell.style.whiteSpace = 'nowrap';
+                cell.style.fontSize = getComputedStyle(document.documentElement).getPropertyValue('--export-font-size') || '0.9rem';
+            });
+        }
+
+        const canvas = await html2canvas(clonArea, {
+            scale: 2,
+            backgroundColor: '#ffffff',
+            logging: false,
+            width: 1000,
+            windowWidth: 1000
+        });
+
+        document.body.removeChild(tempContainer);
+        return canvas;
+    }
+
+    async function descargarImagen() {
+        const area = document.getElementById('areaExportar'); 
+        const rango = document.getElementById('rangoExportar').value;
+        try {
+            const canvas = await generarCanvasLimpio(area, rango);
+            const link = document.createElement('a');
+            link.download = `Agenda-${document.getElementById('mesAgenda').value}-${rango}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            registrarActividad('Descargar', `Imagen de agenda (Rango: ${rango})`);
+        } catch (err) {
+            alert("Error al descargar la imagen: " + err.message);
+        }
+    }
+
     async function compartirAgenda() {
         const area = document.getElementById('areaExportar');
+        const rango = document.getElementById('rangoExportar').value;
         try {
-            const canvas = await html2canvas(area, { 
-                scale: 2, 
-                backgroundColor: '#ffffff',
-                ignoreElements: (el) => el.classList.contains('no-print')
-            });
+            const canvas = await generarCanvasLimpio(area, rango);
             canvas.toBlob(async (blob) => {
                 const file = new File([blob], `Agenda_${document.getElementById('mesAgenda').value}.png`, { type: 'image/png' });
                 if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -1583,44 +1664,6 @@
             } catch (err) { alert("Error al leer el archivo JSON: " + err.message); }
         };
         if (event.target.files[0]) fileReader.readAsText(event.target.files[0]);
-    }
-
-    // === DESCARGAR IMAGEN SIN BOTONES DE EDICIÓN Y CON ESPACIADO LIMPIO ===
-    async function descargarImagen() {
-        const area = document.getElementById('areaExportar'); 
-        const rango = document.getElementById('rangoExportar').value;
-        const filas = Array.from(document.querySelectorAll('#tablaCuerpoAgenda tr'));
-
-        filas.forEach(f => {
-            const dia = parseInt(f.getAttribute('data-diames'));
-            if (isNaN(dia)) return;
-            let mostrar = true;
-
-            if (rango === 'sem1' && (dia < 1 || dia > 7)) mostrar = false;
-            else if (rango === 'sem2' && (dia < 8 || dia > 14)) mostrar = false;
-            else if (rango === 'sem3' && (dia < 15 || dia > 21)) mostrar = false;
-            else if (rango === 'sem4' && dia < 22) mostrar = false;
-
-            f.style.display = mostrar ? '' : 'none';
-        });
-
-        try {
-            const canvas = await html2canvas(area, { 
-                scale: 2, 
-                backgroundColor: '#ffffff', 
-                logging: false,
-                ignoreElements: (el) => el.classList.contains('no-print')
-            });
-            const link = document.createElement('a');
-            link.download = `Agenda-${document.getElementById('mesAgenda').value}-${rango}.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-            registrarActividad('Descargar', `Imagen de agenda (Rango: ${rango})`);
-        } catch (err) {
-            alert("Error al descargar: " + err.message);
-        } finally {
-            filas.forEach(f => f.style.display = '');
-        }
     }
 </script>
 
