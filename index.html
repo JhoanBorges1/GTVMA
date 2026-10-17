@@ -1,0 +1,1621 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Territorios Vista Al Mar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --google-blue: #1a73e8;
+            --google-blue-hover: #1557b0;
+            --google-blue-container: #e8f0fe;
+            --google-red: #d93025;
+            --google-red-container: #fce8e6;
+            --google-green: #1e8e3e;
+            --google-green-container: #e6f4ea;
+            --google-gray-bg: #f8f9fa;
+            --google-card-bg: #ffffff;
+            --text-main: #000000;
+            --text-sub: #5f6368;
+            --border-light: #dadce0;
+            --shadow-soft: 0 1px 3px rgba(60,64,67,0.12), 0 1px 2px rgba(60,64,67,0.24);
+            --shadow-hover: 0 4px 8px rgba(60,64,67,0.15), 0 1px 3px rgba(60,64,67,0.1);
+            --radius-xl: 28px;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            --radius-pill: 100px;
+            --app-zoom: 1;
+            --export-font-size: 0.9rem;
+        }
+
+        [data-theme="dark"] {
+            --google-blue: #8ab4f8;
+            --google-blue-hover: #aecbfa;
+            --google-blue-container: #004a77;
+            --google-red: #f28b82;
+            --google-red-container: #601210;
+            --google-green: #81c995;
+            --google-green-container: #0c3b21;
+            --google-gray-bg: #202124;
+            --google-card-bg: #292a2d;
+            --text-main: #ffffff;
+            --text-sub: #9aa0a6;
+            --border-light: #3c4043;
+            --shadow-soft: 0 1px 3px rgba(0,0,0,0.5);
+            --shadow-hover: 0 4px 8px rgba(0,0,0,0.6);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--google-gray-bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            zoom: var(--app-zoom);
+        }
+
+        /* === PANTALLA DE BLOQUEO === */
+        #auth-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: var(--google-gray-bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+
+        .auth-card {
+            background: var(--google-card-bg);
+            border-radius: var(--radius-xl);
+            padding: 40px;
+            width: 100%;
+            max-width: 440px;
+            box-shadow: var(--shadow-hover);
+            text-align: center;
+            border: 1px solid var(--border-light);
+        }
+
+        .auth-card h2 {
+            font-family: 'Google Sans', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin: 16px 0 8px 0;
+        }
+
+        .auth-card p {
+            color: var(--text-sub);
+            font-size: 0.9rem;
+            margin-bottom: 24px;
+        }
+
+        .auth-input-group {
+            text-align: left;
+            margin-bottom: 24px;
+        }
+
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .password-wrapper input {
+            padding-right: 44px;
+        }
+
+        .toggle-password-btn {
+            position: absolute;
+            right: 8px;
+            background: transparent;
+            border: none;
+            padding: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-sub);
+            border-radius: 50%;
+        }
+
+        .toggle-password-btn:hover {
+            background-color: rgba(95, 99, 104, 0.1);
+        }
+
+        .auth-error {
+            color: var(--google-red);
+            font-size: 0.8rem;
+            margin-top: 8px;
+            display: none;
+            font-family: 'Google Sans', sans-serif;
+            font-weight: 700;
+        }
+
+        /* === APP CONTENT === */
+        #app-content { display: none; }
+
+        /* === HEADER & CONTROLES === */
+        header {
+            background: var(--google-card-bg);
+            padding: 12px 24px;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        h1 {
+            font-family: 'Google Sans', sans-serif;
+            font-weight: 700;
+            color: var(--text-main);
+            margin: 0;
+            font-size: 1.35rem;
+            letter-spacing: -0.2px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .zoom-control {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--google-gray-bg);
+            padding: 4px 10px;
+            border-radius: var(--radius-pill);
+            border: 1px solid var(--border-light);
+            font-size: 0.8rem;
+            font-weight: 700;
+            font-family: 'Google Sans', sans-serif;
+        }
+
+        .zoom-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            color: var(--text-main);
+            padding: 0 4px;
+        }
+
+        /* === TAB BAR === */
+        .tab-bar {
+            display: flex;
+            justify-content: center;
+            background: var(--google-card-bg);
+            border-bottom: 1px solid var(--border-light);
+            position: sticky;
+            top: 57px;
+            z-index: 99;
+            padding: 0 16px;
+            gap: 8px;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            padding: 14px 20px;
+            border: none;
+            background: transparent;
+            font-family: 'Google Sans', sans-serif;
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: var(--text-sub);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-bottom: 3px solid transparent;
+            border-radius: 4px 4px 0 0;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover { background-color: var(--google-gray-bg); color: var(--text-main); }
+        .tab-btn.active { color: var(--google-blue); border-bottom-color: var(--google-blue); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* === CONTAINER === */
+        .container { max-width: 1000px; margin: 24px auto; padding: 0 16px; }
+
+        .module-section {
+            background: var(--google-card-bg);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-light);
+            transition: box-shadow 0.2s ease;
+        }
+
+        .module-section:hover { box-shadow: var(--shadow-soft); }
+
+        .module-title {
+            font-family: 'Google Sans', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 0 0 18px 0;
+            color: var(--text-main);
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .btn-vertical-group { display: flex; flex-direction: column; gap: 12px; }
+
+        button {
+            padding: 10px 20px;
+            border-radius: var(--radius-pill);
+            border: 1px solid transparent;
+            font-family: 'Google Sans', sans-serif;
+            font-weight: 700;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        button:hover { box-shadow: var(--shadow-soft); transform: translateY(-1px); }
+        .btn-primary { background-color: var(--google-blue); color: white; }
+        .btn-primary:hover { background-color: var(--google-blue-hover); }
+        .btn-outline { background-color: var(--google-card-bg); border-color: var(--border-light); color: var(--google-blue); }
+        .btn-outline:hover { background-color: var(--google-blue-container); border-color: transparent; }
+        .btn-danger-outline { background-color: var(--google-card-bg); border-color: var(--border-light); color: var(--google-red); padding: 4px 10px; font-size: 0.8rem; font-weight: 700; }
+        .btn-danger-outline:hover { background-color: var(--google-red-container); border-color: transparent; }
+        .btn-add-outline { background-color: var(--google-card-bg); border-color: var(--border-light); color: var(--google-green); padding: 4px 10px; font-size: 0.8rem; font-weight: 700; }
+        .btn-add-outline:hover { background-color: var(--google-green-container); border-color: transparent; }
+        .btn-edit-outline { background-color: var(--google-card-bg); border-color: var(--border-light); color: var(--google-blue); padding: 6px 14px; font-size: 0.8rem; font-weight: 700; }
+        .btn-edit-outline:hover { background-color: var(--google-blue-container); border-color: transparent; }
+
+        .input-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; text-align: left; }
+        .input-group label { 
+            font-family: 'Google Sans', sans-serif; 
+            font-size: 0.9rem; 
+            font-weight: 700; 
+            color: var(--text-main); 
+            letter-spacing: 0.1px;
+        }
+
+        input, select, textarea {
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-light);
+            font-size: 0.95rem;
+            background-color: var(--google-card-bg);
+            width: 100%;
+            box-sizing: border-box;
+            font-family: 'Roboto', sans-serif;
+            color: var(--text-main);
+            transition: all 0.2s ease;
+        }
+
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--google-blue); box-shadow: 0 0 0 3px var(--google-blue-container); }
+
+        .search-box {
+            margin-bottom: 16px;
+            position: relative;
+        }
+
+        .group-card, .contact-item {
+            background-color: var(--google-card-bg);
+            border: 1px solid var(--border-light);
+            padding: 16px 20px;
+            border-radius: var(--radius-md);
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .group-card strong, .contact-item strong { font-family: 'Google Sans', sans-serif; font-weight: 700; color: var(--text-main); }
+        .group-card small, .contact-item small { color: var(--text-sub); font-size: 0.85rem; font-weight: 500; }
+
+        /* === TABLA DE AGENDA ESTILO EXCEL (TEXTO NEGRO Y NEGRITA) === */
+        #areaExportar {
+            padding: 24px;
+            background-color: var(--google-card-bg);
+            border-radius: var(--radius-lg);
+            width: 100%;
+            margin: 0 auto;
+            border: 1px solid var(--border-light);
+        }
+
+        .export-header { margin-bottom: 20px; border-bottom: 2px solid var(--google-blue); padding-bottom: 14px; text-align: center; }
+        .export-header h2 { font-family: 'Google Sans', sans-serif; color: var(--google-blue); font-size: 1.5rem; font-weight: 700; margin: 0 0 6px 0; }
+        .export-header p { margin: 0; color: var(--text-sub); font-size: 0.95rem; font-weight: 500; }
+
+        .table-responsive { width: 100%; overflow-x: auto; border-radius: var(--radius-md); border: 1px solid var(--border-light); }
+        .agenda-table { width: 100%; border-collapse: collapse; font-size: var(--export-font-size); font-family: 'Roboto', sans-serif; }
+        .agenda-table th { 
+            background-color: var(--google-gray-bg); 
+            padding: 12px 10px; 
+            text-align: center; 
+            color: var(--text-main); 
+            font-family: 'Google Sans', sans-serif; 
+            font-weight: 700; 
+            font-size: 0.85rem; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--border-light); 
+        }
+
+        .agenda-table td { 
+            padding: 8px 10px; 
+            border-bottom: none; 
+            color: var(--text-main); 
+            text-align: center; 
+            outline: none; 
+        }
+
+        .agenda-table td[contenteditable="true"]:focus {
+            background-color: var(--google-blue-container);
+            border-radius: 4px;
+        }
+
+        /* Días, Fechas y Horas en Negro Puro y Negrita */
+        .agenda-table td.bold-cell { 
+            font-weight: 700; 
+            font-family: 'Google Sans', sans-serif; 
+            color: var(--text-main); 
+        }
+
+        .agenda-table td.cell-hora {
+            font-weight: 700;
+            font-family: 'Google Sans', sans-serif;
+            color: var(--text-main);
+        }
+        
+        /* División horizontal solo al cambiar de día */
+        .agenda-table tr.day-separator td { border-top: 2px solid var(--google-blue); }
+
+        /* === CHIP BUTTONS === */
+        .chip-button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 8px 0;
+        }
+
+        .chip-button {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 20px;
+            border-radius: var(--radius-pill);
+            background-color: var(--google-gray-bg);
+            border: 1.5px solid transparent;
+            color: var(--text-sub);
+            font-family: 'Google Sans', sans-serif;
+            font-size: 0.875rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+            box-shadow: 0 1px 2px rgba(60,64,67,0.08);
+        }
+
+        .chip-button:hover {
+            background-color: var(--border-light);
+            color: var(--text-main);
+            transform: translateY(-1px);
+        }
+
+        .chip-button input[type="checkbox"] {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+
+        .chip-button:has(input:checked) {
+            background-color: var(--google-blue);
+            color: #ffffff;
+            border-color: var(--google-blue-hover);
+            box-shadow: 0 2px 6px rgba(26,115,232,0.3);
+        }
+
+        .chip-button:has(input:checked):hover {
+            background-color: var(--google-blue-hover);
+        }
+
+        /* === CONDUCTORES DISPONIBILIDAD === */
+        .day-row-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background-color: var(--google-gray-bg);
+            padding: 16px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-light);
+        }
+
+        .day-row { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            background-color: var(--google-card-bg); 
+            padding: 12px 16px; 
+            border-radius: var(--radius-md); 
+            border: 1px solid var(--border-light); 
+        }
+
+        .time-options { 
+            display: flex; 
+            gap: 10px; 
+            align-items: center; 
+        }
+
+        /* === EMERGENCIA / CONDUCTORES DISPONIBLES === */
+        .emergencia-box {
+            background-color: var(--google-gray-bg);
+            border-left: 4px solid var(--google-blue);
+            padding: 10px 14px;
+            border-radius: var(--radius-sm);
+            margin-top: 8px;
+            font-size: 0.85rem;
+        }
+
+        .emergencia-title {
+            font-weight: 700;
+            color: var(--google-blue);
+            font-family: 'Google Sans', sans-serif;
+            margin-bottom: 6px;
+        }
+
+        .emergencia-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 1px solid var(--border-light);
+        }
+
+        .btn-emergencia-wa {
+            background-color: #25D366;
+            color: white;
+            padding: 4px 10px;
+            border-radius: var(--radius-pill);
+            text-decoration: none;
+            font-size: 0.75rem;
+            font-weight: 700;
+            font-family: 'Google Sans', sans-serif;
+        }
+
+        .hidden { display: none !important; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(32, 33, 36, 0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background-color: var(--google-card-bg); width: 92%; max-width: 640px; max-height: 85vh; border-radius: var(--radius-xl); padding: 32px; overflow-y: auto; box-shadow: 0 12px 24px rgba(0,0,0,0.2); }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--border-light); }
+
+        .contact-actions { display: flex; align-items: center; gap: 8px; }
+        .btn-whatsapp { background-color: #25D366; color: white; padding: 8px 16px; border-radius: var(--radius-pill); text-decoration: none; font-size: 0.8rem; font-weight: 700; font-family: 'Google Sans', sans-serif; }
+        .check-icon { color: var(--google-green); font-size: 1.1rem; font-weight: bold; margin-right: 4px; }
+        .historial-item { background-color: var(--google-card-bg); border: 1px solid var(--border-light); padding: 14px 18px; border-radius: var(--radius-md); margin-bottom: 10px; font-size: 0.9rem; }
+        .historial-item strong { font-family: 'Google Sans', sans-serif; font-weight: 700; color: var(--google-blue); }
+
+        /* === ESTILOS EXCLUSIVOS DE IMPRESIÓN === */
+        @media print {
+            body { background: white !important; color: black !important; zoom: 1 !important; }
+            header, .tab-bar, .btn-vertical-group, .contact-actions, .modal, #auth-overlay, .search-box, .no-print, .module-title, #secContactarModulo { display: none !important; }
+            .container { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
+            .module-section { border: none !important; padding: 0 !important; margin: 0 !important; background: transparent !important; }
+            #areaExportar { border: none !important; padding: 0 !important; width: 100% !important; background: transparent !important; }
+            .agenda-table { font-size: var(--export-font-size) !important; width: 100% !important; }
+            .agenda-table th { background-color: #f1f3f4 !important; color: black !important; border-bottom: 2px solid #000 !important; }
+            .agenda-table td { border-bottom: 1px solid #ddd !important; }
+            .agenda-table tr.day-separator td { border-top: 2px solid #000 !important; }
+        }
+
+        @media (max-width: 600px) {
+            .tab-bar { top: 53px; }
+            .tab-btn { font-size: 0.8rem; padding: 12px 10px; }
+            .module-section { padding: 18px; }
+            #areaExportar { padding: 12px; }
+            .chip-button { padding: 8px 14px; font-size: 0.8rem; }
+            .day-row { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .time-options { width: 100%; justify-content: flex-start; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- === PANTALLA DE AUTENTICACIÓN === -->
+<div id="auth-overlay">
+    <div class="auth-card">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: 8px;">
+            <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 5C13.66 5 15 6.34 15 8C15 9.66 13.66 11 12 11C10.34 11 9 9.66 9 8C9 6.34 10.34 5 12 5ZM12 19.2C9.5 19.2 7.29 17.92 6 15.98C6.03 13.99 10 12.9 12 12.9C13.99 12.9 17.97 13.99 18 15.98C16.71 17.92 14.5 19.2 12 19.2Z" fill="#1a73e8"/>
+        </svg>
+        <h2>Acceso Protegido</h2>
+        <p>Introduce la clave de acceso para continuar</p>
+        
+        <form id="form-auth" onsubmit="verificarAcceso(event)">
+            <div class="auth-input-group">
+                <div class="password-wrapper">
+                    <input type="password" id="auth-pass" placeholder="Contraseña de la app" autocomplete="current-password" required autofocus>
+                    <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility()" title="Mostrar u ocultar contraseña">
+                        <svg id="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </button>
+                </div>
+                <div id="auth-msg-error" class="auth-error">Contraseña incorrecta. Inténtalo de nuevo.</div>
+            </div>
+            <button type="submit" class="btn-primary" style="width: 100%; padding: 12px;">Acceder</button>
+        </form>
+    </div>
+</div>
+
+<!-- === CONTENIDO PRINCIPAL === -->
+<div id="app-content">
+    <header>
+        <h1>Gestión de Territorios Vista Al Mar</h1>
+        <div class="header-actions">
+            <!-- ZOOM CONTROL -->
+            <div class="zoom-control">
+                <span>Zoom:</span>
+                <button class="zoom-btn" onclick="cambiarZoom(-0.1)">-</button>
+                <span id="zoomLabel">100%</span>
+                <button class="zoom-btn" onclick="cambiarZoom(0.1)">+</button>
+            </div>
+            <!-- MODO OSCURO -->
+            <button class="btn-outline" onclick="toggleTheme()" style="padding: 6px 12px; font-size: 0.8rem;" id="themeToggleBtn">🌙 Oscuro</button>
+            <button class="btn-outline" onclick="cerrarSesion()" style="padding: 6px 12px; font-size: 0.8rem;">Cerrar Sesión</button>
+        </div>
+    </header>
+
+    <nav class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('tab-agenda')">Agenda</button>
+        <button class="tab-btn" onclick="switchTab('tab-personal')">Personal</button>
+        <button class="tab-btn" onclick="switchTab('tab-territorios')">Territorios</button>
+        <button class="tab-btn" onclick="switchTab('tab-config')">Grupos y Respaldo</button>
+        <button class="tab-btn" onclick="switchTab('tab-historial')">Actividad</button>
+    </nav>
+    
+    <div class="container">
+        <!-- === TAB PERSONAL === -->
+        <div id="tab-personal" class="tab-content">
+            <section class="module-section">
+                <div class="module-title">Conductores</div>
+                <div class="btn-vertical-group">
+                    <button class="btn-primary" onclick="openModalConductor()">Agregar Conductor</button>
+                    <button class="btn-outline" onclick="toggleVisibility('secConductores')">Ver Lista y Editar</button>
+                </div>
+                <div id="secConductores" class="hidden" style="margin-top:16px;">
+                    <div class="search-box">
+                        <input type="text" id="searchConductor" placeholder="🔍 Buscar conductor por nombre..." oninput="filtrarConductores()">
+                    </div>
+                    <div id="listaConductores"></div>
+                </div>
+            </section>
+        </div>
+
+        <!-- === TAB TERRITORIOS === -->
+        <div id="tab-territorios" class="tab-content">
+            <section class="module-section">
+                <div class="module-title">Territorios</div>
+                <div class="btn-vertical-group">
+                    <button class="btn-primary" onclick="openModalTerritorio()">Agregar Territorio</button>
+                    <button class="btn-outline" onclick="toggleVisibility('secTerritorios')">Ver Lista y Editar</button>
+                </div>
+                <div id="secTerritorios" class="hidden" style="margin-top:16px;">
+                    <div class="search-box">
+                        <input type="text" id="searchTerritorio" placeholder="🔍 Buscar territorio por número o nombre..." oninput="filtrarTerritorios()">
+                    </div>
+                    <div id="listaTerritorios"></div>
+                </div>
+            </section>
+        </div>
+
+        <!-- === TAB CONFIG === -->
+        <div id="tab-config" class="tab-content">
+            <section class="module-section">
+                <div class="module-title">Grupos de Predicación</div>
+                <div class="btn-vertical-group">
+                    <button class="btn-primary" onclick="openModalGrupo()">Agregar Grupo</button>
+                    <button class="btn-outline" onclick="toggleVisibility('listaGrupos')">Ver Grupos Registrados</button>
+                </div>
+                <div id="listaGrupos" class="hidden" style="margin-top:16px;"></div>
+            </section>
+
+            <section class="module-section">
+                <div class="module-title">Copia de Seguridad (Backup)</div>
+                <p style="font-size: 0.9rem; color: var(--text-sub); margin-bottom: 16px; font-weight: 500;">
+                    Exporta un archivo de respaldo con todos tus datos o impórtalo en otro dispositivo para mantener la app sincronizada.
+                </p>
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    <button class="btn-primary" onclick="exportarBackupJSON()">Exportar Respaldo (.json)</button>
+                    <button class="btn-outline" onclick="document.getElementById('importFileInput').click()">Importar Respaldo</button>
+                    <input type="file" id="importFileInput" accept=".json" class="hidden" onchange="importarBackupJSON(event)">
+                </div>
+            </section>
+        </div>
+
+        <!-- === TAB AGENDA === -->
+        <div id="tab-agenda" class="tab-content active">
+            <section class="module-section">
+                <div class="module-title">Generación de Territorios</div>
+                <div class="btn-vertical-group">
+                    <div class="input-group">
+                        <label>Seleccionar mes (2026)</label>
+                        <select id="mesAgenda" onchange="cargarAgendaDelMes()">
+                            <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+                            <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+                            <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+                            <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                        <button class="btn-primary" onclick="generarNuevaAgenda()">Generar Todo el Mes</button>
+                        <button class="btn-outline" onclick="openModal('modalHistorial')">Historial Guardado</button>
+                    </div>
+                </div>
+                
+                <div id="resultadoAgenda" class="hidden" style="margin-top: 24px;">
+                    <div class="table-responsive">
+                        <div id="areaExportar">
+                            <div class="export-header">
+                                <h2 id="tituloExportar">Agenda de Predicación</h2>
+                                <p id="fechaActualDisplay"></p>
+                            </div>
+                            <table class="agenda-table">
+                                <thead>
+                                    <tr>
+                                        <th class="no-print" style="width: 40px;"></th>
+                                        <th>Día</th>
+                                        <th>Fecha</th>
+                                        <th>Hora</th>
+                                        <th>Conductor</th>
+                                        <th>Territorio</th>
+                                        <th>Lugar</th>
+                                        <th>Grupos</th>
+                                        <th class="no-print" style="width: 40px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tablaCuerpoAgenda"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="no-print" style="margin-top: 24px; display: flex; gap: 12px; align-items: center; border-top: 1px solid var(--border-light); padding-top: 20px; flex-wrap: wrap;">
+                        <div class="input-group" style="margin-bottom:0; width: 160px;">
+                            <label>Rango Exportar</label>
+                            <select id="rangoExportar">
+                                <option value="mes">Mes Completo</option>
+                                <option value="sem1">Semana 1 (1-7)</option>
+                                <option value="sem2">Semana 2 (8-14)</option>
+                                <option value="sem3">Semana 3 (15-21)</option>
+                                <option value="sem4">Semana 4 (22-Fin)</option>
+                            </select>
+                        </div>
+                        <div class="input-group" style="margin-bottom:0; width: 160px;">
+                            <label>Tamaño Exportación</label>
+                            <select id="tamanoExportar" onchange="cambiarTamanoExportacion(this.value)">
+                                <option value="compacto">Compacto (8pt)</option>
+                                <option value="normal" selected>Normal (10pt)</option>
+                                <option value="mediano">Mediano (12pt)</option>
+                                <option value="grande">Grande (14pt)</option>
+                            </select>
+                        </div>
+                        <button class="btn-primary" onclick="guardarEnHistorial()">Guardar Historial</button>
+                        <button class="btn-outline" onclick="descargarImagen()">Descargar Imagen</button>
+                        <button class="btn-outline" onclick="compartirAgenda()">Compartir</button>
+                        <button class="btn-outline" onclick="window.print()">Imprimir</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="module-section" id="secContactarModulo">
+                <div class="module-title">Contactar</div>
+                <p style="font-size: 0.9rem; color: var(--text-sub); margin-bottom: 16px; font-weight: 500;">Próximas asignaciones (2 días):</p>
+                <div id="listaContactos"></div>
+            </section>
+        </div>
+        
+<!-- === TAB HISTORIAL DE ACTIVIDAD === -->
+        <div id="tab-historial" class="tab-content">
+            <section class="module-section">
+                <div class="module-title">Historial de Cambios</div>
+                <p style="font-size: 0.9rem; color: var(--text-sub); margin-bottom: 20px; font-weight: 500;">
+                    Aquí se registran todos los cambios realizados en la app (agregar, editar, eliminar).
+                </p>
+                <div id="listaActividad"></div>
+                <div style="margin-top: 20px;">
+                    <button class="btn-danger-outline" onclick="borrarHistorialActividad()" style="width: auto;">Borrar Historial</button>
+                </div>
+            </section>
+        </div>
+    </div> 
+</div>
+
+<!-- === MODALES === -->
+<div id="modalConductor" class="modal">
+    <div class="modal-content">
+        <h2 class="module-title" id="tituloModalConductor">Registro de Conductor</h2>
+        <form id="formConductor">
+            <input type="hidden" id="editIndexConductor">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                <div class="input-group"><label>Nombre</label><input type="text" id="cNombre" placeholder="Ej: Jhoan" required></div>
+                <div class="input-group"><label>Apellido</label><input type="text" id="cApellido" placeholder="Ej: Borges" required></div>
+            </div>
+            <div class="input-group"><label>Teléfono</label><input type="tel" id="cTelefono" value="+58 " required></div>
+            <div class="input-group"><label>¿Es Anciano?</label><select id="cEsAnciano" onchange="document.getElementById('grupoSugerido').classList.toggle('hidden', this.value !== 'si')"><option value="no">No</option><option value="si">Sí</option></select></div>
+            <div id="grupoSugerido" class="input-group hidden"><label>Asignar a Grupo:</label><select id="cGrupoAsignado"><option value="1">Grupo 1</option><option value="2">Grupo 2</option><option value="3">Grupo 3</option><option value="4">Grupo 4</option><option value="5">Grupo 5</option><option value="6">Grupo 6</option><option value="7">Grupo 7</option><option value="8">Grupo 8</option></select></div>
+            
+            <div class="input-group">
+                <label>Disponibilidad Semanal</label>
+                <div id="disponibilidadSemanal" class="day-row-container">
+                    <div class="day-row">
+                        <label class="chip-button"><input type="checkbox" class="day-check" value="LUN"> Lunes</label>
+                        <div class="time-options">
+                            <label class="chip-button"><input type="checkbox" value="LUN-AM"> AM</label>
+                            <label class="chip-button"><input type="checkbox" value="LUN-PM"> PM</label>
+                        </div>
+                    </div>
+                    <div class="day-row">
+                        <label class="chip-button"><input type="checkbox" class="day-check" value="MAR"> Martes</label>
+                        <div class="time-options">
+                            <label class="chip-button"><input type="checkbox" value="MAR-AM"> AM</label>
+                            <label class="chip-button"><input type="checkbox" value="MAR-PM"> PM</label>
+                        </div>
+                    </div>
+                    <div class="day-row">
+                        <label class="chip-button"><input type="checkbox" class="day-check" value="MIÉ"> Miércoles</label>
+                        <div class="time-options">
+                            <label class="chip-button"><input type="checkbox" value="MIÉ-AM"> AM</label>
+                        </div>
+                    </div>
+                    <div class="day-row">
+                        <label class="chip-button"><input type="checkbox" class="day-check" value="JUE"> Jueves</label>
+                        <div class="time-options">
+                            <label class="chip-button"><input type="checkbox" value="JUE-AM"> AM</label>
+                            <label class="chip-button"><input type="checkbox" value="JUE-PM"> PM</label>
+                        </div>
+                    </div>
+                    <div class="day-row">
+                        <label class="chip-button"><input type="checkbox" class="day-check" value="VIE"> Viernes</label>
+                        <div class="time-options">
+                            <label class="chip-button"><input type="checkbox" value="VIE-AM"> AM</label>
+                            <label class="chip-button"><input type="checkbox" value="VIE-PM"> PM</label>
+                        </div>
+                    </div>
+                    <div class="day-row">
+                        <label class="chip-button"><input type="checkbox" class="day-check" value="SÁB"> Sábado</label>
+                        <div class="time-options">
+                            <label class="chip-button"><input type="checkbox" value="SÁB-AM"> AM</label>
+                        </div>
+                    </div>
+                    <div class="day-row">
+                        <label class="chip-button"><input type="checkbox" class="day-check" value="DOM"> Domingo</label>
+                        <div class="time-options">
+                            <label class="chip-button"><input type="checkbox" value="DOM-AM"> AM</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                <div class="input-group"><label>Fecha Disponible</label><input type="date" id="cFechaDisponible"></div>
+                <div class="input-group"><label>Fecha NO Disponible</label><input type="date" id="cFechaNoDisponible"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-outline" onclick="closeModal('modalConductor')">Cancelar</button>
+                <button type="submit" class="btn-primary">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="modalTerritorio" class="modal">
+    <div class="modal-content">
+        <h2 class="module-title" id="tituloModalTerritorio">Nuevo Territorio</h2>
+        <form id="formTerritorio">
+            <input type="hidden" id="editIndexTerritorio">
+            <div style="display:grid; grid-template-columns: 1fr 3fr; gap:16px;">
+                <div class="input-group"><label>Número</label><input type="number" id="tNumero" placeholder="1" required></div>
+                <div class="input-group"><label>Nombre del Territorio</label><input type="text" id="tNombre" placeholder="Ej: Zona A-1" required></div>
+            </div>
+            <div class="input-group">
+                <label>Lugares de encuentro</label>
+                <textarea id="tLugar" rows="2" placeholder="Describe puntos de reunión..."></textarea>
+            </div>
+            
+            <div class="input-group">
+                <label>Días Sugeridos</label>
+                <div class="chip-button-group" id="tDias">
+                    <label class="chip-button"><input type="checkbox" value="LUN"> Lunes</label>
+                    <label class="chip-button"><input type="checkbox" value="MAR"> Martes</label>
+                    <label class="chip-button"><input type="checkbox" value="MIÉ"> Miércoles</label>
+                    <label class="chip-button"><input type="checkbox" value="JUE"> Jueves</label>
+                    <label class="chip-button"><input type="checkbox" value="VIE"> Viernes</label>
+                    <label class="chip-button"><input type="checkbox" value="SÁB"> Sábado</label>
+                    <label class="chip-button"><input type="checkbox" value="DOM"> Domingo</label>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>Horarios Sugeridos</label>
+                <div class="chip-button-group" id="tHoras">
+                    <label class="chip-button"><input type="checkbox" value="07:00 AM"> 07:00 AM</label>
+                    <label class="chip-button"><input type="checkbox" value="09:00 AM"> 09:00 AM</label>
+                    <label class="chip-button"><input type="checkbox" value="11:00 AM"> 11:00 AM</label>
+                    <label class="chip-button"><input type="checkbox" value="04:00 PM"> 04:00 PM</label>
+                    <label class="chip-button"><input type="checkbox" value="06:30 PM"> 06:30 PM</label>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-outline" onclick="closeModal('modalTerritorio')">Cancelar</button>
+                <button type="submit" class="btn-primary">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="modalGrupo" class="modal">
+    <div class="modal-content">
+        <h2 class="module-title">Registrar Grupo</h2>
+        <form id="formGrupo">
+            <input type="hidden" id="editIndexGrupo">
+            <div class="input-group"><label>Número del Grupo</label><select id="gNumero" required><option value="1">Grupo 1</option><option value="2">Grupo 2</option><option value="3">Grupo 3</option><option value="4">Grupo 4</option><option value="5">Grupo 5</option><option value="6">Grupo 6</option><option value="7">Grupo 7</option><option value="8">Grupo 8</option></select></div>
+            <div class="input-group"><label>Anciano Responsable</label><select id="gAnciano" required></select></div>
+            <div class="modal-footer"><button type="button" class="btn-outline" onclick="closeModal('modalGrupo')">Cerrar</button><button type="submit" class="btn-primary">Guardar</button></div>
+        </form>
+    </div>
+</div>
+
+<div id="modalHistorial" class="modal">
+    <div class="modal-content">
+        <h2 class="module-title">Historial Guardado</h2>
+        <div id="listaHistorial"></div>
+        <div class="modal-footer"><button class="btn-outline" onclick="closeModal('modalHistorial')">Cerrar</button></div>
+    </div>
+</div>
+
+<script>
+    // === AUTENTICACIÓN Y SEGURIDAD ===
+    const CLAVE_TOKENS = ["VmlzdGFBbE1hcjIwMjY="];
+
+    function togglePasswordVisibility() {
+        const passInput = document.getElementById('auth-pass');
+        const eyeIcon = document.getElementById('eye-icon');
+        if (passInput.type === 'password') {
+            passInput.type = 'text';
+            eyeIcon.innerHTML = `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>`;
+        } else {
+            passInput.type = 'password';
+            eyeIcon.innerHTML = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>`;
+        }
+    }
+
+    function verificarAcceso(e) {
+        if (e) e.preventDefault();
+        const passInput = document.getElementById('auth-pass').value;
+        const passCodificada = btoa(unescape(encodeURIComponent(passInput)));
+        if (CLAVE_TOKENS.includes(passCodificada)) {
+            sessionStorage.setItem('vdm_authenticated', 'true');
+            desbloquearInterfaz();
+        } else {
+            document.getElementById('auth-msg-error').style.display = 'block';
+        }
+    }
+
+    function desbloquearInterfaz() {
+        document.getElementById('auth-overlay').style.display = 'none';
+        document.getElementById('app-content').style.display = 'block';
+        initApp();
+    }
+
+    function cerrarSesion() {
+        sessionStorage.removeItem('vdm_authenticated');
+        window.location.reload();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        if (sessionStorage.getItem('vdm_authenticated') === 'true') {
+            desbloquearInterfaz();
+        }
+    });
+
+    // === TEMA Y ZOOM ===
+    let currentZoom = parseFloat(localStorage.getItem('vdm_zoom') || '1');
+    function cambiarZoom(delta) {
+        currentZoom = Math.min(Math.max(0.8, currentZoom + delta), 1.4);
+        document.documentElement.style.setProperty('--app-zoom', currentZoom);
+        document.getElementById('zoomLabel').innerText = `${Math.round(currentZoom * 100)}%`;
+        localStorage.setItem('vdm_zoom', currentZoom);
+    }
+
+    function cambiarTamanoExportacion(val) {
+        let size = "0.9rem";
+        if (val === "compacto") size = "0.75rem";
+        else if (val === "normal") size = "0.9rem";
+        else if (val === "mediano") size = "1.05rem";
+        else if (val === "grande") size = "1.2rem";
+        document.documentElement.style.setProperty('--export-font-size', size);
+    }
+
+    function toggleTheme() {
+        const doc = document.documentElement;
+        const isDark = doc.getAttribute('data-theme') === 'dark';
+        const newTheme = isDark ? 'light' : 'dark';
+        doc.setAttribute('data-theme', newTheme);
+        document.getElementById('themeToggleBtn').innerText = newTheme === 'dark' ? '☀️ Claro' : '🌙 Oscuro';
+        localStorage.setItem('vdm_theme', newTheme);
+    }
+
+    // === VARIABLES GLOBALES ===
+    let conductores = [], territorios = [], grupos = [], agendasMaestras = {}, historialAgendas = {}, historialActividad = [];
+    
+    const MATRIZ_HORARIOS = { 
+        'LUN': ['07:00 AM', '09:00 AM', '04:00 PM', '06:30 PM'], 
+        'MAR': ['07:00 AM', '09:00 AM', '04:00 PM'], 
+        'MIÉ': ['07:00 AM', '09:00 AM'], 
+        'JUE': ['07:00 AM', '09:00 AM', '04:00 PM'], 
+        'VIE': ['07:00 AM', '09:00 AM', '04:00 PM', '06:30 PM'], 
+        'SÁB': ['07:00 AM', '09:00 AM'], 
+        'DOM': ['11:00 AM'] 
+    };
+
+    // === INICIALIZACIÓN ===
+    function initApp() {
+        const savedTheme = localStorage.getItem('vdm_theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        document.getElementById('themeToggleBtn').innerText = savedTheme === 'dark' ? '☀️ Claro' : '🌙 Oscuro';
+        
+        currentZoom = parseFloat(localStorage.getItem('vdm_zoom') || '1');
+        document.documentElement.style.setProperty('--app-zoom', currentZoom);
+        document.getElementById('zoomLabel').innerText = `${Math.round(currentZoom * 100)}%`;
+
+        const local = JSON.parse(localStorage.getItem('vdm_data') || '{}');
+        conductores = local.conductores || [];
+        territorios = local.territorios || [];
+        grupos = local.grupos || [];
+        agendasMaestras = {}; 
+        historialAgendas = local.historial || {};
+        historialActividad = local.actividad || [];
+
+        renderListaConductores(); 
+        renderListaTerritorios(); 
+        renderListaGrupos(); 
+        renderHistorial(); 
+        renderActividad();
+        cargarAgendaDelMes(); 
+        
+        const lastTab = localStorage.getItem('vdm_active_tab') || 'tab-agenda';
+        switchTab(lastTab);
+    }
+
+    function guardarLocal() { 
+        const payload = { conductores, territorios, grupos, historial: historialAgendas, actividad: historialActividad };
+        localStorage.setItem('vdm_data', JSON.stringify(payload)); 
+    }
+
+    function registrarActividad(accion, detalle) {
+        const ahora = new Date();
+        const fechaHora = ahora.toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        historialActividad.unshift({ accion, detalle, fecha: fechaHora });
+        if (historialActividad.length > 100) historialActividad.pop();
+        guardarLocal();
+        renderActividad();
+    }
+
+    // === TABS ===
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        
+        const selectedBtn = Array.from(document.querySelectorAll('.tab-btn')).find(btn => btn.getAttribute('onclick').includes(tabId));
+        if (selectedBtn) selectedBtn.classList.add('active');
+        document.getElementById(tabId).classList.add('active');
+        localStorage.setItem('vdm_active_tab', tabId);
+    }
+
+    function toggleVisibility(id) { document.getElementById(id).classList.toggle('hidden'); }
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+    // === BUSCADORES ===
+    function filtrarConductores() {
+        const query = document.getElementById('searchConductor').value.toLowerCase();
+        renderListaConductores(query);
+    }
+
+    function filtrarTerritorios() {
+        const query = document.getElementById('searchTerritorio').value.toLowerCase();
+        renderListaTerritorios(query);
+    }
+
+    // === CRUD CONDUCTORES ===
+    function openModalConductor() { 
+        document.getElementById('formConductor').reset(); 
+        document.getElementById('editIndexConductor').value = ""; 
+        document.getElementById('grupoSugerido').classList.add('hidden'); 
+        openModal('modalConductor'); 
+    }
+    
+    document.getElementById('formConductor').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const index = document.getElementById('editIndexConductor').value;
+        const disponibilidadActualizada = [];
+        document.querySelectorAll('#disponibilidadSemanal .day-row').forEach(row => {
+            const dayCheck = row.querySelector('.day-check');
+            if (dayCheck && dayCheck.checked) {
+                disponibilidadActualizada.push(dayCheck.value); 
+                row.querySelectorAll('.time-options input:checked').forEach(timeCheck => {
+                    disponibilidadActualizada.push(timeCheck.value); 
+                });
+            }
+        });
+
+        const c = {
+            nombre: document.getElementById('cNombre').value, 
+            apellido: document.getElementById('cApellido').value,
+            telefono: document.getElementById('cTelefono').value, 
+            esAnciano: document.getElementById('cEsAnciano').value === 'si',
+            grupo: document.getElementById('cGrupoAsignado').value,
+            disponibilidadDias: disponibilidadActualizada, 
+            fechaDisponible: document.getElementById('cFechaDisponible').value, 
+            fechaNoDisponible: document.getElementById('cFechaNoDisponible').value
+        };
+
+        if (index === "") {
+            conductores.push(c);
+            registrarActividad('Agregar', `Conductor: ${c.nombre} ${c.apellido}`);
+        } else {
+            const anterior = `${conductores[index].nombre} ${conductores[index].apellido}`;
+            conductores[index] = c;
+            registrarActividad('Editar', `Conductor: ${anterior} → ${c.nombre} ${c.apellido}`);
+        }
+        guardarLocal(); renderListaConductores(); actualizarSelectAncianos(); closeModal('modalConductor');
+    });
+
+    function renderListaConductores(filter = '') {
+        const cont = document.getElementById('listaConductores'); cont.innerHTML = '';
+        conductores.sort((a,b) => a.nombre.localeCompare(b.nombre));
+        conductores.filter(c => `${c.nombre} ${c.apellido}`.toLowerCase().includes(filter)).forEach((c, i) => {
+            cont.innerHTML += `<div class="group-card"><div><strong>${c.nombre} ${c.apellido}</strong><br><small>G${c.grupo} ${c.esAnciano ? '(Anciano)' : ''}</small></div><div><button class="btn-edit-outline" onclick="editarConductor(${i})">Edit</button><button class="btn-danger-outline" onclick="eliminarConductor(${i})">X</button></div></div>`;
+        });
+    }
+
+    function editarConductor(i) {
+        const c = conductores[i]; 
+        document.getElementById('editIndexConductor').value = i;
+        document.getElementById('cNombre').value = c.nombre; document.getElementById('cApellido').value = c.apellido; document.getElementById('cTelefono').value = c.telefono;
+        document.getElementById('cEsAnciano').value = c.esAnciano ? 'si' : 'no'; document.getElementById('cGrupoAsignado').value = c.grupo || "1";
+        document.getElementById('grupoSugerido').classList.toggle('hidden', !c.esAnciano);
+        document.querySelectorAll('#disponibilidadSemanal input[type="checkbox"]').forEach(cb => { cb.checked = (c.disponibilidadDias || []).includes(cb.value); });
+        document.getElementById('cFechaDisponible').value = c.fechaDisponible || "";
+        document.getElementById('cFechaNoDisponible').value = c.fechaNoDisponible || "";
+        openModal('modalConductor');
+    }
+
+    function eliminarConductor(i) { 
+        if(confirm("¿Eliminar?")) { 
+            const nombre = `${conductores[i].nombre} ${conductores[i].apellido}`;
+            conductores.splice(i,1); 
+            guardarLocal(); renderListaConductores();
+            registrarActividad('Eliminar', `Conductor: ${nombre}`);
+        } 
+    }
+
+    // === CRUD TERRITORIOS ===
+    function openModalTerritorio() { 
+        document.getElementById('formTerritorio').reset(); 
+        document.getElementById('editIndexTerritorio').value = ""; 
+        openModal('modalTerritorio'); 
+    }
+    
+    document.getElementById('formTerritorio').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const index = document.getElementById('editIndexTerritorio').value;
+        const t = { 
+            numero: document.getElementById('tNumero').value, 
+            nombre: document.getElementById('tNombre').value, 
+            lugar: document.getElementById('tLugar').value,
+            disponibilidadDias: Array.from(document.querySelectorAll('#tDias input:checked')).map(cb => cb.value),
+            disponibilidadHoras: Array.from(document.querySelectorAll('#tHoras input:checked')).map(cb => cb.value)
+        };
+        if(index === "") {
+            territorios.push(t);
+            registrarActividad('Agregar', `Territorio: ${t.numero}. ${t.nombre}`);
+        } else {
+            const anterior = `${territorios[index].numero}. ${territorios[index].nombre}`;
+            territorios[index] = t;
+            registrarActividad('Editar', `Territorio: ${anterior} → ${t.numero}. ${t.nombre}`);
+        }
+        guardarLocal(); renderListaTerritorios(); closeModal('modalTerritorio');
+    });
+
+    function renderListaTerritorios(filter = '') {
+        const cont = document.getElementById('listaTerritorios'); cont.innerHTML = '';
+        territorios.sort((a,b) => (parseInt(a.numero)||999) - (parseInt(b.numero)||999));
+        territorios.filter(t => `${t.numero} ${t.nombre}`.toLowerCase().includes(filter)).forEach((t, i) => {
+            cont.innerHTML += `<div class="group-card"><div><strong>${t.numero}. ${t.nombre}</strong></div><div><button class="btn-edit-outline" onclick="editarTerritorio(${i})">Edit</button><button class="btn-danger-outline" onclick="eliminarTerritorio(${i})">X</button></div></div>`;
+        });
+    }
+
+    function editarTerritorio(i) {
+        const t = territorios[i]; document.getElementById('editIndexTerritorio').value = i;
+        document.getElementById('tNumero').value = t.numero; document.getElementById('tNombre').value = t.nombre; document.getElementById('tLugar').value = t.lugar;
+        document.querySelectorAll('#tDias input').forEach(cb => cb.checked = (t.disponibilidadDias || []).includes(cb.value));
+        document.querySelectorAll('#tHoras input').forEach(cb => cb.checked = (t.disponibilidadHoras || []).includes(cb.value));
+        openModal('modalTerritorio');
+    }
+
+    function eliminarTerritorio(i) { 
+        if(confirm("¿Eliminar?")) { 
+            const nombre = `${territorios[i].numero}. ${territorios[i].nombre}`;
+            territorios.splice(i,1); 
+            guardarLocal(); renderListaTerritorios();
+            registrarActividad('Eliminar', `Territorio: ${nombre}`);
+        } 
+    }
+
+    // === CRUD GRUPOS ===
+    function openModalGrupo() { 
+        document.getElementById('formGrupo').reset(); 
+        document.getElementById('editIndexGrupo').value = ""; 
+        actualizarSelectAncianos();
+        openModal('modalGrupo'); 
+    }
+
+    function actualizarSelectAncianos() {
+        const select = document.getElementById('gAnciano');
+        select.innerHTML = '<option value="">Seleccionar...</option>';
+        conductores.filter(c => c.esAnciano).forEach(c => { select.innerHTML += `<option value="${c.nombre} ${c.apellido}">${c.nombre} ${c.apellido}</option>`; });
+    }
+
+    document.getElementById('formGrupo').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const index = document.getElementById('editIndexGrupo').value;
+        const g = { numero: document.getElementById('gNumero').value, anciano: document.getElementById('gAnciano').value };
+        if(index === "") {
+            grupos.push(g);
+            registrarActividad('Agregar', `Grupo ${g.numero} - Anciano: ${g.anciano}`);
+        } else {
+            const anterior = `Grupo ${grupos[index].numero} - ${grupos[index].anciano}`;
+            grupos[index] = g;
+            registrarActividad('Editar', `Grupo: ${anterior} → Grupo ${g.numero} - ${g.anciano}`);
+        }
+        guardarLocal(); renderListaGrupos(); closeModal('modalGrupo');
+    });
+
+    function renderListaGrupos() {
+        const cont = document.getElementById('listaGrupos'); cont.innerHTML = '';
+        grupos.forEach((g, i) => {
+            cont.innerHTML += `<div class="group-card"><div><strong>Grupo ${g.numero}</strong><br><small>${g.anciano}</small></div><div><button class="btn-edit-outline" onclick="editarGrupo(${i})">Edit</button><button class="btn-danger-outline" onclick="eliminarGrupo(${i})">X</button></div></div>`;
+        });
+    }
+
+    function editarGrupo(i) {
+        const g = grupos[i]; document.getElementById('editIndexGrupo').value = i;
+        document.getElementById('gNumero').value = g.numero; actualizarSelectAncianos();
+        document.getElementById('gAnciano').value = g.anciano; openModal('modalGrupo');
+    }
+
+    function eliminarGrupo(i) { 
+        if(confirm("¿Eliminar?")) { 
+            const nombre = `Grupo ${grupos[i].numero}`;
+            grupos.splice(i,1); guardarLocal(); renderListaGrupos();
+            registrarActividad('Eliminar', nombre);
+        } 
+    }
+
+    // === GENERACIÓN CON LÓGICA DE ÚLTIMO SÁBADO ===
+    function obtenerUltimoSabado(anio, mes) {
+        const diasEnMes = new Date(anio, mes, 0).getDate();
+        for (let dia = diasEnMes; dia >= 1; dia--) {
+            const fecha = new Date(anio, mes - 1, dia);
+            if (fecha.getDay() === 6) return dia; // 6 es Sábado
+        }
+        return -1;
+    }
+
+    function generarNuevaAgenda() {
+        const mes = parseInt(document.getElementById('mesAgenda').value);
+        const nombreMes = document.getElementById('mesAgenda').options[document.getElementById('mesAgenda').selectedIndex].text;
+        const anio = 2026;
+        const diasEnMes = new Date(anio, mes, 0).getDate();
+        const diasSemana = ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"];
+        const ultimoSabadoDia = obtenerUltimoSabado(anio, mes);
+        let nuevaAgenda = [];
+
+        // Ordenar territorios por número de menor a mayor
+        const territoriosOrdenados = [...territorios].sort((a,b) => (parseInt(a.numero)||999) - (parseInt(b.numero)||999));
+
+        for (let i = 1; i <= diasEnMes; i++) {
+            const fechaObj = new Date(anio, mes - 1, i);
+            const diaNombre = diasSemana[fechaObj.getDay()];
+            const fechaIso = fechaObj.toISOString().split('T')[0];
+
+            // SI ES EL ÚLTIMO SÁBADO DEL MES: Regla especial de los 6 grupos con sus ancianos
+            if (i === ultimoSabadoDia) {
+                const numGrupos = Math.min(grupos.length, 6);
+                for (let gIdx = 0; gIdx < (numGrupos || 6); gIdx++) {
+                    const grupoInfo = grupos[gIdx] || { numero: (gIdx + 1).toString(), anciano: "Anciano del Grupo" };
+                    const terrInfo = territoriosOrdenados[gIdx] || { numero: (gIdx + 1).toString(), nombre: `Territorio ${gIdx + 1}`, lugar: "Punto de Encuentro" };
+                    
+                    nuevaAgenda.push({
+                        diaSemana: diaNombre,
+                        diaMes: i,
+                        hora: "09:00 AM",
+                        conductor: grupoInfo.anciano || `Encargado G${grupoInfo.numero}`,
+                        territorio: `${terrInfo.numero}. ${terrInfo.nombre}`,
+                        lugar: terrInfo.lugar || "Punto de Encuentro",
+                        grupos: `Grupo ${grupoInfo.numero}`,
+                        avisado: false
+                    });
+                }
+                continue;
+            }
+
+            // DÍAS REGULARES DEL MES
+            const horariosDelDia = MATRIZ_HORARIOS[diaNombre] || [];
+            let territoriosUsadosHoy = [];
+
+            horariosDelDia.forEach(hora => {
+                const esTarde = hora.includes("PM");
+                const bloqueBuscado = `${diaNombre}-${esTarde ? 'PM' : 'AM'}`;
+
+                const condsDisponibles = conductores.filter(c => {
+                    const cumpleDiaBloque = (c.disponibilidadDias || []).includes(bloqueBuscado);
+                    const noDisponible = c.fechaNoDisponible === fechaIso;
+                    const forzadoDisponible = c.fechaDisponible === fechaIso;
+                    return (cumpleDiaBloque && !noDisponible) || forzadoDisponible;
+                });
+
+                const terrsDisponibles = territorios.filter(t => 
+                    (t.disponibilidadDias || []).includes(diaNombre) && 
+                    (t.disponibilidadHoras || []).includes(hora) && 
+                    !territoriosUsadosHoy.includes(t.nombre)
+                );
+                
+                const grupoObjetivo = ((i % Math.max(grupos.length, 1)) + 1).toString();
+                const c = obtenerConductorOptimo(condsDisponibles, nuevaAgenda, i, grupoObjetivo);
+                const t = terrsDisponibles.length > 0 ? terrsDisponibles[Math.floor(Math.random() * terrsDisponibles.length)] : null;
+                if (t) territoriosUsadosHoy.push(t.nombre);
+
+                nuevaAgenda.push({
+                    diaSemana: diaNombre, diaMes: i, hora: hora,
+                    conductor: c ? `${c.nombre} ${c.apellido}` : "Sin Asignar",
+                    territorio: t ? `${t.numero}. ${t.nombre}` : "Sin Territorio",
+                    lugar: t ? t.lugar : (hora === "06:30 PM" ? "Vía Telegram" : "Por Definir"),
+                    grupos: (hora === "06:30 PM") ? "Telegram" : "Todos",
+                    avisado: false
+                });
+            });
+        }
+        agendasMaestras[mes] = nuevaAgenda;
+        renderAgenda(nuevaAgenda, nombreMes);
+        document.getElementById('resultadoAgenda').classList.remove('hidden');
+        registrarActividad('Generar', `Agenda de ${nombreMes} ${anio}`);
+    }
+
+    function obtenerConductorOptimo(conds, agenda, diaMesActual, grupoObjetivo) {
+        if (conds.length === 0) return null;
+        const conteo = {};
+        conds.forEach(c => { conteo[`${c.nombre} ${c.apellido}`] = 0; });
+        agenda.forEach(a => { if (conteo[a.conductor] !== undefined) conteo[a.conductor]++; });
+
+        const asignadosAyer = agenda.filter(a => a.diaMes === diaMesActual - 1).map(a => a.conductor);
+        let candidatosConDescanso = conds.filter(c => !asignadosAyer.includes(`${c.nombre} ${c.apellido}`));
+        if (candidatosConDescanso.length === 0) candidatosConDescanso = conds;
+
+        const minAsignaciones = Math.min(...candidatosConDescanso.map(c => conteo[`${c.nombre} ${c.apellido}`]));
+        const menosAsignados = candidatosConDescanso.filter(c => conteo[`${c.nombre} ${c.apellido}`] === minAsignaciones);
+        const delGrupo = menosAsignados.filter(c => c.grupo === grupoObjetivo);
+
+        if (delGrupo.length > 0) return delGrupo[Math.floor(Math.random() * delGrupo.length)];
+        return menosAsignados[Math.floor(Math.random() * menosAsignados.length)];
+    }
+
+    // === RENDERIZADO Y EDICIÓN (BOTÓN + A LA IZQUIERDA POR FILA) ===
+    function renderAgenda(datos, nombreMes) {
+        document.getElementById('fechaActualDisplay').innerText = `${nombreMes} 2026`;
+        const cuerpo = document.getElementById('tablaCuerpoAgenda');
+        if (!cuerpo) return;
+        cuerpo.innerHTML = '';
+        let ultimoDia = null;
+
+        datos.forEach((f, i) => {
+            const tr = document.createElement('tr');
+            tr.setAttribute('data-diames', f.diaMes);
+            const esNuevoDia = (ultimoDia !== f.diaMes);
+
+            if (ultimoDia && esNuevoDia) tr.className = 'day-separator';
+            
+            tr.innerHTML = `
+                <td class="no-print"><button class="btn-add-outline" title="Agregar asignación debajo" onclick="insertarFilaDebajo(${i})">+</button></td>
+                <td class="bold-cell" contenteditable="true" onblur="actualizarCelda(${i},'diaSemana',this.innerText)">${esNuevoDia ? f.diaSemana : ''}</td>
+                <td class="bold-cell" contenteditable="true" onblur="actualizarCelda(${i},'diaMes',this.innerText)">${esNuevoDia ? f.diaMes : ''}</td>
+                <td class="cell-hora" contenteditable="true" onblur="actualizarCelda(${i},'hora',this.innerText)">${f.hora}</td>
+                <td contenteditable="true" onblur="actualizarCelda(${i},'conductor',this.innerText)">${f.conductor}</td>
+                <td contenteditable="true" onblur="actualizarCelda(${i},'territorio',this.innerText)">${f.territorio}</td>
+                <td contenteditable="true" onblur="actualizarCelda(${i},'lugar',this.innerText)">${f.lugar}</td>
+                <td contenteditable="true" onblur="actualizarCelda(${i},'grupos',this.innerText)">${f.grupos}</td>
+                <td class="no-print"><button class="btn-danger-outline" onclick="eliminarFilaManual(${i})">X</button></td>`;
+            
+            cuerpo.appendChild(tr);
+            ultimoDia = f.diaMes;
+        });
+        renderContactos();
+    }
+
+    function actualizarCelda(idx, campo, valor) { 
+        const mes = document.getElementById('mesAgenda').value; 
+        if(agendasMaestras[mes] && agendasMaestras[mes][idx]) { 
+            agendasMaestras[mes][idx][campo] = valor.trim();
+            renderContactos(); 
+        } 
+    }
+
+    function insertarFilaDebajo(idx) {
+        const mes = document.getElementById('mesAgenda').value;
+        if (!agendasMaestras[mes]) agendasMaestras[mes] = [];
+        
+        const filaReferencia = agendasMaestras[mes][idx] || { diaSemana: "LUN", diaMes: 1 };
+        const nuevaFila = {
+            diaSemana: filaReferencia.diaSemana,
+            diaMes: filaReferencia.diaMes,
+            hora: "00:00 AM",
+            conductor: "Nuevo Conductor",
+            territorio: "Nuevo Territorio",
+            lugar: "Punto de Encuentro",
+            grupos: "Todos",
+            avisado: false
+        };
+
+        agendasMaestras[mes].splice(idx + 1, 0, nuevaFila);
+        renderAgenda(agendasMaestras[mes], document.getElementById('mesAgenda').options[mes-1].text);
+    }
+
+    function eliminarFilaManual(idx) {
+        const mes = document.getElementById('mesAgenda').value;
+        if (agendasMaestras[mes]) {
+            agendasMaestras[mes].splice(idx, 1);
+            renderAgenda(agendasMaestras[mes], document.getElementById('mesAgenda').options[mes-1].text);
+        }
+    }
+
+    // === WHATSAPP + CONDUCTORES DISPONIBLES DE EMERGENCIA ===
+    function renderContactos() {
+        const cont = document.getElementById('listaContactos'); if (!cont) return;
+        cont.innerHTML = '';
+        const mesActivo = document.getElementById('mesAgenda').value;
+        const hoy = new Date().getDate();
+        if (!agendasMaestras[mesActivo]) return;
+
+        const prox = agendasMaestras[mesActivo].filter(a => a.diaMes === hoy || a.diaMes === hoy + 1);
+        
+        prox.forEach((asig) => {
+            const idxReal = agendasMaestras[mesActivo].indexOf(asig);
+            const cond = conductores.find(c => `${c.nombre} ${c.apellido}`.toLowerCase() === asig.conductor.toLowerCase());
+            const telf = cond ? cond.telefono.replace(/\s/g, '').replace('+', '') : "58";
+            
+            const msgOficial = `¡Hola! ¿Cómo estás?. Este mensaje es para notificarte que tienes el privilegio de dirigir el grupo del ${asig.diaSemana.toLowerCase()} ${asig.diaMes} a las ${asig.hora}. Ese día estarán abarcando el territorio ${asig.territorio}. El lugar de encuentro será en ${asig.lugar}. ¿Podrías confirmarme si vas a asistir? Estaré atento a tu respuesta. ¡Muchas gracias!`;
+
+            const esTarde = asig.hora.includes("PM");
+            const bloqueBuscado = `${asig.diaSemana}-${esTarde ? 'PM' : 'AM'}`;
+            const disponiblesEmergencia = conductores.filter(c => 
+                (c.disponibilidadDias || []).includes(bloqueBuscado) &&
+                `${c.nombre} ${c.apellido}`.toLowerCase() !== asig.conductor.toLowerCase()
+            );
+
+            let htmlEmergencia = '';
+            if (disponiblesEmergencia.length > 0) {
+                htmlEmergencia = `<div class="emergencia-box">
+                    <div class="emergencia-title">Sustitutos disponibles de emergencia:</div>`;
+                disponiblesEmergencia.forEach(sub => {
+                    const subTelf = sub.telefono.replace(/\s/g, '').replace('+', '');
+                    const msgEmergencia = `¡Hola ${sub.nombre}! El hermano asignado para dirigir el grupo del ${asig.diaSemana.toLowerCase()} ${asig.diaMes} a las ${asig.hora} (${asig.territorio}) no podrá asistir. ¿Tendrías la disponibilidad de apoyarnos dirigiendo la predicación ese día? Avísanos por favor. ¡Gracias!`;
+                    htmlEmergencia += `
+                        <div class="emergencia-item">
+                            <span>${sub.nombre} ${sub.apellido}</span>
+                            <a href="https://wa.me/${subTelf}?text=${encodeURIComponent(msgEmergencia)}" target="_blank" class="btn-emergencia-wa">Contactar Emergencia</a>
+                        </div>`;
+                });
+                htmlEmergencia += `</div>`;
+            }
+
+            cont.innerHTML += `<div class="contact-item">
+                <div style="width:100%;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div><strong>${asig.conductor}</strong><br><small>Día ${asig.diaMes} - ${asig.hora}</small></div>
+                        <div class="contact-actions">
+                            <span class="check-icon" style="display: ${asig.avisado ? 'inline' : 'none'}">✓</span>
+                            <button class="btn-outline" style="padding: 6px 12px; font-size: 0.8rem;" onclick="copiarTextoNotificacion('${encodeURIComponent(msgOficial)}')">Copiar</button>
+                            <a href="https://wa.me/${telf}?text=${encodeURIComponent(msgOficial)}" target="_blank" class="btn-whatsapp" onclick="marcarComoAvisado(${idxReal})">WhatsApp</a>
+                        </div>
+                    </div>
+                    ${htmlEmergencia}
+                </div>
+            </div>`;
+        });
+    }
+
+    function copiarTextoNotificacion(msgCodificado) {
+        navigator.clipboard.writeText(decodeURIComponent(msgCodificado)).then(() => alert("¡Mensaje copiado al portapapeles!"));
+    }
+
+    function marcarComoAvisado(idx) {
+        const mes = document.getElementById('mesAgenda').value;
+        if (agendasMaestras[mes] && agendasMaestras[mes][idx]) {
+            agendasMaestras[mes][idx].avisado = true;
+            renderContactos();
+        }
+    }
+
+    // === COMPARTIR CON API NATIVA NAVEGADOR ===
+    async function compartirAgenda() {
+        const area = document.getElementById('areaExportar');
+        try {
+            const canvas = await html2canvas(area, { scale: 2, backgroundColor: '#ffffff' });
+            canvas.toBlob(async (blob) => {
+                const file = new File([blob], `Agenda_${document.getElementById('mesAgenda').value}.png`, { type: 'image/png' });
+                if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({
+                        title: 'Agenda de Predicación',
+                        text: 'Comparto la agenda oficial de predicación.',
+                        files: [file]
+                    });
+                } else {
+                    alert("Tu navegador no soporta compartir imágenes directamente. Usa la opción 'Descargar Imagen'.");
+                }
+            });
+        } catch (err) {
+            alert("Error al compartir: " + err.message);
+        }
+    }
+
+    // === HISTORIAL GUARDADO Y BACKUP ===
+    function guardarEnHistorial() {
+        const mes = document.getElementById('mesAgenda').value; 
+        if (!agendasMaestras[mes]) { alert("Primero genera una agenda para este mes."); return; }
+        historialAgendas[mes] = JSON.parse(JSON.stringify(agendasMaestras[mes]));
+        guardarLocal(); renderHistorial(); 
+        registrarActividad('Guardar historial', `Agenda de ${document.getElementById('mesAgenda').options[mes-1].text}`);
+        alert("Agenda guardada localmente.");
+    }
+
+    function renderHistorial() {
+        const cont = document.getElementById('listaHistorial'); if(!cont) return;
+        cont.innerHTML = '';
+        const meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+        Object.keys(historialAgendas).forEach(m => {
+            cont.innerHTML += `<div class="group-card"><span>Agenda de ${meses[m-1]} 2026</span> <div><button class="btn-edit-outline" onclick="cargarDeHistorial(${m})">Cargar</button><button class="btn-danger-outline" onclick="borrarDeHistorial(${m})">Borrar</button></div></div>`;
+        });
+    }
+    
+    function cargarDeHistorial(m) { 
+        agendasMaestras[m] = JSON.parse(JSON.stringify(historialAgendas[m])); 
+        document.getElementById('mesAgenda').value = m; 
+        renderAgenda(agendasMaestras[m], document.getElementById('mesAgenda').options[m-1].text); 
+        document.getElementById('resultadoAgenda').classList.remove('hidden'); 
+        closeModal('modalHistorial'); 
+    }
+    
+    function borrarDeHistorial(m) { 
+        if(confirm("¿Borrar historial?")) { 
+            delete historialAgendas[m]; 
+            guardarLocal(); renderHistorial(); cargarAgendaDelMes(); 
+        } 
+    }
+
+    function cargarAgendaDelMes() { 
+        const mes = document.getElementById('mesAgenda').value; 
+        const n = document.getElementById('mesAgenda').options[document.getElementById('mesAgenda').selectedIndex].text; 
+        if (agendasMaestras[mes]) { 
+            renderAgenda(agendasMaestras[mes], n); 
+            document.getElementById('resultadoAgenda').classList.remove('hidden'); 
+        } else {
+            document.getElementById('resultadoAgenda').classList.add('hidden'); 
+            document.getElementById('tablaCuerpoAgenda').innerHTML = '';
+        }
+        renderContactos(); 
+    }
+
+    function renderActividad() {
+        const cont = document.getElementById('listaActividad'); if(!cont) return;
+        cont.innerHTML = '';
+        if (historialActividad.length === 0) {
+            cont.innerHTML = '<p style="color: var(--text-sub); font-size: 0.9rem; font-weight: 500;">No hay actividad registrada aún.</p>';
+            return;
+        }
+        historialActividad.forEach(act => {
+            cont.innerHTML += `<div class="historial-item"><strong>${act.accion}</strong>: ${act.detalle}<br><small>${act.fecha}</small></div>`;
+        });
+    }
+
+    function borrarHistorialActividad() {
+        if(confirm("¿Borrar historial de actividad?")) {
+            historialActividad = []; guardarLocal(); renderActividad();
+        }
+    }
+
+    function exportarBackupJSON() {
+        const payload = { conductores, territorios, grupos, historial: historialAgendas, actividad: historialActividad };
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload, null, 2));
+        const dlAnchorElem = document.createElement('a');
+        dlAnchorElem.setAttribute("href", dataStr);
+        dlAnchorElem.setAttribute("download", `Respaldo_Territorios_${new Date().toISOString().slice(0,10)}.json`);
+        dlAnchorElem.click();
+        registrarActividad('Exportar', 'Copia de seguridad en formato JSON');
+    }
+
+    function importarBackupJSON(event) {
+        const fileReader = new FileReader();
+        fileReader.onload = function(e) {
+            try {
+                const parsed = JSON.parse(e.target.result);
+                if (confirm("¿Importar copia de seguridad? Se reemplazarán los datos actuales en este dispositivo.")) {
+                    conductores = parsed.conductores || [];
+                    territorios = parsed.territorios || [];
+                    grupos = parsed.grupos || [];
+                    historialAgendas = parsed.historial || {};
+                    historialActividad = parsed.actividad || [];
+                    guardarLocal();
+                    initApp();
+                    alert("¡Respaldo cargado correctamente!");
+                }
+            } catch (err) { alert("Error al leer el archivo JSON: " + err.message); }
+        };
+        if (event.target.files[0]) fileReader.readAsText(event.target.files[0]);
+    }
+
+    async function descargarImagen() {
+        const area = document.getElementById('areaExportar'); 
+        const rango = document.getElementById('rangoExportar').value;
+        const filas = Array.from(document.querySelectorAll('#tablaCuerpoAgenda tr'));
+
+        filas.forEach(f => {
+            const dia = parseInt(f.getAttribute('data-diames'));
+            if (isNaN(dia)) return;
+            let mostrar = true;
+
+            if (rango === 'sem1' && (dia < 1 || dia > 7)) mostrar = false;
+            else if (rango === 'sem2' && (dia < 8 || dia > 14)) mostrar = false;
+            else if (rango === 'sem3' && (dia < 15 || dia > 21)) mostrar = false;
+            else if (rango === 'sem4' && dia < 22) mostrar = false;
+
+            f.style.display = mostrar ? '' : 'none';
+        });
+
+        try {
+            const canvas = await html2canvas(area, { scale: 2, backgroundColor: '#ffffff', logging: false });
+            const link = document.createElement('a');
+            link.download = `Agenda-${document.getElementById('mesAgenda').value}-${rango}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            registrarActividad('Descargar', `Imagen de agenda (Rango: ${rango})`);
+        } catch (err) {
+            alert("Error al descargar: " + err.message);
+        } finally {
+            filas.forEach(f => f.style.display = '');
+        }
+    }
+</script>
+
+</body>
+</html>
